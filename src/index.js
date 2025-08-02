@@ -130,17 +130,101 @@ server.delete("/frases/:id", async (req, res) => {
 
 	try {
 		const connection = await getConnection();
-		let myquery =
-			"DELETE FROM frases WHERE id = ?";
+		const myquery = "DELETE FROM frases WHERE id = ?"; //HAY QUE BORRAR LAS RELACIONES? 
 		const [results] = await connection.query(myquery, [id]);
 		await connection.end();
+
 		res.status(200).json({
 			info: "Frase eliminada correctamente",
-			frase: results[0],
+			idEliminado: id,
 		});
 	} catch (error) {
+		console.error("Error al eliminar la frase:", error);
 		res.status(500).json({
-			error: "Error al eliminar la frase",
+			error: "Error interno al eliminar la frase",
 		});
 	}
 });
+
+
+// ENDPOINTS ADICIONALES RECOMENDADOS
+
+// GET /frases/personaje/:personaje_id  - Obtener todas las frases de un personaje específico
+server.get("/frases/personaje/:personaje_id", async (req, res) => {
+    const id = req.params.personaje_id;
+	
+    try {
+		const connection = await getConnection();
+		let myquery = "SELECT texto, personajes.nombre, personajes.apellido FROM frases INNER JOIN frases_capitulos_personajes fcp ON frases.id = fcp.frases_id INNER JOIN personajes ON fcp.personajes_id = personajes.id WHERE personajes.id = ?";
+		const [results] = await connection.query(myquery, [id]);
+		await connection.end();
+
+		res.status(200).json({
+			info: { count: results.length },
+			frases: results,
+		});
+	} catch (error) {
+		res.status(500).json({
+			error: "error al listar las frases del personaje",
+		});
+	}
+});
+
+// GET /frases/capitulo/:capitulo_id - Obtener todas las frases de un capítulo específico
+server.get("/frases/capitulo/:capitulo_id", async (req, res) => {
+    const id = req.params.capitulo_id;
+	
+    try {
+		const connection = await getConnection();
+		let myquery = "SELECT texto, capitulos.titulo, capitulos.numero_episodio, capitulos.temporada FROM frases INNER JOIN frases_capitulos_personajes fcp ON frases.id = fcp.frases_id INNER JOIN capitulos ON fcp.capitulos_id = capitulos.id WHERE capitulos.id = ?";
+		const [results] = await connection.query(myquery, [id]);
+		await connection.end();
+
+		res.status(200).json({
+			info: { count: results.length },
+			frases: results,
+		});
+	} catch (error) {
+		res.status(500).json({
+			error: "error al listar la/s frase/s del capítulo",
+		});
+	}
+});
+
+// GET /personajes - Listar todos los personajes
+server.get("/personajes", async (req, res) => {
+    try {
+        const connection = await getConnection();
+        let myquery = "SELECT * FROM personajes";
+        const [results] = await connection.query(myquery);
+        await connection.end();
+        res.status(200).json({
+            info: { count: results.length },
+            personajes: results,
+        });
+    } catch (error) {
+        res.status(500).json({
+            error: "Error al listar los personajes",
+        });
+    }
+});
+
+
+// GET /capitulos - Listar todos los capítulos
+server.get("/capitulos", async (req, res) => {
+    try {
+        const connection = await getConnection();
+        let myquery = "SELECT * FROM capitulos";
+        const [results] = await connection.query(myquery);
+        await connection.end();
+        res.status(200).json({
+            info: { count: results.length },
+            personajes: results,
+        });
+    } catch (error) {
+        res.status(500).json({
+            error: "Error al listar los capitulos",
+        });
+    }
+});
+
